@@ -1,63 +1,35 @@
 <?php
-session_start(); // start the session
+include "app/classes/databaseClass.php";
+include "app/classes/postClass.php"; 
 
-// check if user is logged in as an admin
-if (isset($_SESSION['admin']) && $_SESSION['admin'] === "admin") {
-    // allow access to admin-only content
+$post = new Post();
 
-    // connect to database
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "pblog";
+session_start();
+if(isset($_POST['store'])){
 
-    // create connection
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    // check connection
-    if (!$conn) {
-        die("Connection failed: " . mysqli_connect_error());
+    $title = trim($_POST['title']);
+    $body = trim($_POST['body']);
+    $date = date("Y-m-d H:i:s");
+    $image = "";
+
+    if(empty($title) && empty($body)){
+        $error .= "Please make sure to fill in all the boxes <br>";
     }
 
-    // add a new post
-    if (isset($_POST['submit'])) {
-        $title = $_POST['title'];
-        $content = $_POST['content'];
-        $date = $_POST['date'];
-        $image = $_POST['image'];
-        $sql = "INSERT INTO posts (title, content, date, image) VALUES ( $title, $content, $date, $image)";
-        $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "sss", $title, $content, $image);
-        mysqli_stmt_execute($stmt);
-        echo "New post added successfully";
+    if(!empty($_FILES['image']['name'])){
+        $image_name = $_FILES['image']['name'];
+        $image_tmp_name = $_FILES['image']['tmp_name'];
+        $image_path = "app/uploads/" . $image_name;
+        move_uploaded_file($image_tmp_name, $image_path);
+        $image = $image_path;
     }
 
-    // display list of posts and allow edit/delete
-    $sql = "SELECT * FROM posts";
-    $result = mysqli_query($conn, $sql);
-    // if (mysqli_num_rows($result) > 0) {
-    //     echo "<table><tr><th>Title</th><th>Content</th><th>image</th><th>Actions</th></tr>";
-    //     while ($row = mysqli_fetch_assoc($result)) {
-    //         echo "<tr><td>" . $row['title'] . "</td><td>" . $row['content'] . "</td><td>" . $row['image'] . "</td><td><a href='edit_post.php?id=" . $row['id'] . "'>Edit</a> | <a href='delete_post.php?id=" . $row['id'] . "'>Delete</a></td></tr>";
-    //     }
-    //     echo "</table>";
-    // } else {
-    //     echo "No posts found";
-    // }
-
-    // close connection
-    mysqli_close($conn);
-
-} else {
-    // redirect to login page or show an error message
-    echo "You do not have access to this page.";
+    if(empty($error)){
+        $post->store($title, $body, $image, $date);   
+    }
 }
 
-// destroy the session when user logs out
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header("Location: login.php");
-    exit;
-}
+
 ?>
 <!doctype html>
 
@@ -70,6 +42,49 @@ if (isset($_GET['logout'])) {
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/slick.css">
     <title>Blog</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/style1.css">
+    <script
+        nonce="750cdfa3-9541-41b3-8dae-fa0a095d3d95">(function (w, d) { !function (dk, dl, dm, dn) { dk[dm] = dk[dm] || {}; dk[dm].executed = []; dk.zaraz = { deferred: [], listeners: [] }; dk.zaraz.q = []; dk.zaraz._f = function (dp) { return function () { var dq = Array.prototype.slice.call(arguments); dk.zaraz.q.push({ m: dp, a: dq }) } }; for (const dr of ["track", "set", "debug"]) dk.zaraz[dr] = dk.zaraz._f(dr); dk.zaraz.init = () => { var ds = dl.getElementsByTagName(dn)[0], dt = dl.createElement(dn), du = dl.getElementsByTagName("title")[0]; du && (dk[dm].t = dl.getElementsByTagName("title")[0].text); dk[dm].x = Math.random(); dk[dm].w = dk.screen.width; dk[dm].h = dk.screen.height; dk[dm].j = dk.innerHeight; dk[dm].e = dk.innerWidth; dk[dm].l = dk.location.href; dk[dm].r = dl.referrer; dk[dm].k = dk.screen.colorDepth; dk[dm].n = dl.characterSet; dk[dm].o = (new Date).getTimezoneOffset(); if (dk.dataLayer) for (const dy of Object.entries(Object.entries(dataLayer).reduce(((dz, dA) => ({ ...dz[1], ...dA[1] }))))) zaraz.set(dy[0], dy[1], { scope: "page" }); dk[dm].q = []; for (; dk.zaraz.q.length;) { const dB = dk.zaraz.q.shift(); dk[dm].q.push(dB) } dt.defer = !0; for (const dC of [localStorage, sessionStorage]) Object.keys(dC || {}).filter((dE => dE.startsWith("_zaraz_"))).forEach((dD => { try { dk[dm]["z_" + dD.slice(7)] = JSON.parse(dC.getItem(dD)) } catch { dk[dm]["z_" + dD.slice(7)] = dC.getItem(dD) } })); dt.referrerPolicy = "origin"; dt.src = "/cdn-cgi/zaraz/s.js?z=" + btoa(encodeURIComponent(JSON.stringify(dk[dm]))); ds.parentNode.insertBefore(dt, ds) };["complete", "interactive"].includes(dl.readyState) ? zaraz.init() : dk.addEventListener("DOMContentLoaded", zaraz.init) }(w, d, "zarazData", "script"); })(window, document);</script>
+    <style>
+     @import url('//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css');
+
+            .info-msg,
+            .success-msg,
+            .warning-msg,
+            .error-msg {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px 3px 3px 3px;
+            }
+            .info-msg {
+            color: #059;
+            background-color: #BEF;
+            }
+            .success-msg {
+            color: #270;
+            background-color: #DFF2BF;
+            }
+            .warning-msg {
+            color: #9F6000;
+            background-color: #FEEFB3;
+            }
+            .error-msg {
+            color: #D8000C;
+            background-color: #FFBABA;
+            }   
+           
+            .burger-btn{
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: x-large;
+            font-weight: 600;
+            }
+            .burger-btn:hover {
+             color: #777;
+            }
+    </style>
 
 </head>
 
@@ -81,18 +96,25 @@ if (isset($_GET['logout'])) {
             <img src="./images/YR_Programer.png" alt="site logo">
             <div class="main-navigation">
                 <ul class="main-navigation__ul">
-                    <li><a href="#">Homepage</a></li>
-                    <?php
-                    session_start();
+                <li><a href='index.php'>Homepage</a></li>
+					<?php 
+						if(isset($_SESSION['user_rank']) && $_SESSION['user_rank'] == 'admin') {
+							echo "<li><a href='createpost.php'>Create Post</a></li>";
+							echo "<li><a href='edit_post.php'>Edit Post</a></li>";
+							echo "<li><a href='delete_post.php'>Delete Post</a></li>";
 
-                    if (isset($_SESSION['admin']) && $_SESSION['admin'] == 'admin') {
-                        echo "<li><a href='createpost.php'>Create Post</a></li>";
-                        echo "<li><a href='edit_post.php'>EditPost</a></li>";
-                        echo "<li><a href='logout.php'>Logout</a></li>";
-                    } else {
-                        echo "<li><a href='login.php'>Login</a></li>";
-                    }
-                    ?>
+							echo "
+							<form method='post' action=''>
+							<li><button type='submit' class='burger-btn' name='logout'>Log out</button></li>
+							
+							</form>
+							";
+						} else {
+							echo "<li><a href='login.php'>Login</a></li>";
+							echo "<li><a href='register.php'>Register</a></li>";
+						}
+
+					?>
                 </ul>
             </div>
         </div>
@@ -110,36 +132,50 @@ if (isset($_GET['logout'])) {
     </section>
     <!-- Top banner end -->
     <!-- Form -->
-    <section class="fh5co-about-me">
-        <div class="about-me-inner site-container">
+    <section class="ftco-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center mb-5">
+                    <h2 class="heading-section universal-h2 universal-h2-bckg">Create New Post</h2>
+                </div>
+                </div>
+                <div class="row justify-content-center">
+                <div class="col-md-12 col-lg-10">
+                    <div class=" w-100 wrap d-md-flex justify-content-center">
 
-            <h2 class="universal-h2 universal-h2-bckg">Create Post</h2>
-            <form action="createpost.php" method="post" class="forme-inline my-2 my-lg-0 ">
-                <div>
-                    <label for="title">Title:</label>
-                    <input type="text" name="title" required class="form-control mr-sm-2" type="search"
-                        placeholder="Search" aria-label="Search">
-                </div>
-                <div>
-                    <label for="content">Content:</label>
-                    <textarea name="content" rows="10" required></textarea>
-                </div>
-                <div>
-                    <label for="author">Date:</label>
-                    <input type="date" name="date" required class="form-control mr-sm-2" type="search"
-                        placeholder="Search" aria-label="Search">
-                </div>
-                <div>
-                    <label for="author">image:</label>
-                    <input type="file" name="image" required class="form-control mr-sm-2" type="search"
-                        placeholder="Search" aria-label="Search">
-                </div>
-                <input type="submit" value="Create Post">
-            </form>
+                    <div class="w-100 login-wrap p-4 p-md-5">
+                        <div class="w-100 d-flex">
 
-        </div>
+                        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="w-100 signin-form" enctype="multipart/form-data">
+                            <div class="form-group mb-3">
+                            <label class="label" for="name">Title</label>
+                            <input type="text" class=" form-control" name="title" placeholder="title" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                            <label class="label" for="email">Body</label>
+                            <textarea name="body" id="" cols="30" rows="10" class="form-control" style="resize:none;"></textarea>
+                            </div>
+
+                            <div class="form-group mb-3">
+                            <label class="label" for="password">Image</label>
+                            <input type="file" class="form-control" name="image" placeholder="Password" required>
+
+                            </div>
+                            <div class="form-group">
+                            <button type="submit" name="store" class="form-control btn btn-primary rounded submit px-3">Submit</button>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+
+                    </div>
+
+                </div>
+            </div>
         </div>
     </section>
+
     <!-- Form end -->
 
 
@@ -202,6 +238,15 @@ if (isset($_GET['logout'])) {
     <script src="js/jquery1.min.js"></script>
     <script src="js/slick.min.js"></script>
     <script src="js/main1.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/popper.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/main.js"></script>
+    <script defer
+        src="https://static.cloudflareinsights.com/beacon.min.js/v52afc6f149f6479b8c77fa569edb01181681764108816"
+        integrity="sha512-jGCTpDpBAYDGNYR5ztKt4BQPGef1P0giN6ZGVUi835kFF88FOmmn8jBQWNgrNd8g/Yu421NdgWhwQoaOPFflDw=="
+        data-cf-beacon='{"rayId":"7c1a37a7ec6611a0","token":"cd0b4b3a733644fc843ef0b185f98241","version":"2023.4.0","si":100}'
+        crossorigin="anonymous"></script>
 
     <script src="script.js"></script>
 </body>

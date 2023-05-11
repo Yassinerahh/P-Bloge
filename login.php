@@ -1,59 +1,62 @@
-<?php
-// Start session
+<?php 
+
+// Includes
+include "app/classes/databaseClass.php";
+include "app/classes/loginClass.php"; 
+
+// Declared Variables
+$error = "";
+$validationError = "";
+$password = "";
+$email = '';
+$name = '';
 
 
-include "connect.php";
-// Check if the form has been submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get the username and password from the form
-    $username = $_POST["username"];
-    $password = $_POST["password"];
+// Log in to your account testing and validation
+$login = new Login();
 
-    // Query the database for the user
-    $sql = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
-    $result = mysqli_query($conn, $sql);
+if(isset($_POST['login'])){
 
-    // If the user exists, create a session and redirect to the dashboard
-    if (mysqli_num_rows($result) == 1) {
-        $row = mysqli_fetch_assoc($result);
-        session_start();
-        $_SESSION["username"] =  $row["username"];
-        $_SESSION["admin"] = $row["role"];
-        header ("Location:index.php");
-        exit();
+    // Getting information from the form
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
 
-    } else {
-        // If the user doesn't exist, display an error message
-        $error = "Invalid username or password.";
+    // Checking the felids
+    if(empty($username) && empty($password)){
+        $error .= "Please make sure to fill in all the boxes <br>";
+
+    }else if(strlen($password) < 8){
+        $error .= "Password must be at least 8 characters long <br>";
+
+    }else if(empty($password)){
+        $error .= "Please enter a password <br>";
+
+    }else if($error == ""){
+
+        $result = $login->loginUser($username, $password);
+
+        if($result == 1){
+            
+            echo "<script>window.open('index.php','_self')</script>";
+        }
+
+        if($result == 2){
+          $error .= "Wrong Password <br>";
+        }
+
+        if($result == 3){
+            
+          $validationError .= "No user found with that $username .<br>";
+            
+        }
+        
     }
-    // Get the user ID and password from the form
-$username = $_POST["username"];
-$password = $_POST["password"];
-
-// Query the database for the user's password
-$sql = "SELECT password FROM users WHERE username = '$username'";
-$result = mysqli_query($conn, $sql);
-
-// If the user exists, test the password
-if (mysqli_num_rows($result) == 1) {
-    $row = mysqli_fetch_assoc($result);
-    $hashed_password = $row["password"];
     
-    if (password_verify($password, $hashed_password)) {
-        // Passwords match
-    } else {
-        // Passwords don't match
-        $message = '<div class="error-msg"><i class="fa fa-times-circle"></i> Password is incorrect.</div>';;
-    }
-} else {
-    // User doesn't exist
-    $message = '<div class="info-msg"> <i class="fa fa-info-circle"></i> User not found. </div>';
-}
 }
 
 
 
-mysqli_close($conn);
+
 ?>
 
 <!doctype html>
@@ -129,20 +132,20 @@ mysqli_close($conn);
                             </div>
                             <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="signin-form">
                                
-                                <div class="form-group mb-3 <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>">
+                                <div class="form-group mb-3 <?php echo (!empty($validationError)) ? 'has-validationError' : ''; ?>">
                                     <label class="label" for="name">Username</label>
                                     <input type="text" class="form-control" name="username"  placeholder="Username" required>
-                                    <!-- <span class="help-block"><?php echo $username_err; ?></span> -->
+                                    <!-- <span class="help-block"><?php echo $validationError; ?></span> -->
                                 </div>
 
-                                <div class="form-group mb-3" <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>>
+                                <div class="form-group mb-3" <?php echo (!empty($error)) ? 'has-error' : ''; ?>>
                                     <label class="label" for="password">Password</label>
                                     <input type="password" class="form-control" name="password" placeholder="Password" required>
-                                    <?php if(isset($message)){ echo $message; } ?>
+                                    <?php if(isset($error)){ echo $error; } ?>
                                 </div>
 
                                 <div class="form-group">
-                                    <button type="submit" class="form-control btn btn-primary rounded submit px-3">Sign
+                                    <button type="submit" name="login" class="form-control btn btn-primary rounded submit px-3">Sign
                                         In</button>
                                 </div>
 

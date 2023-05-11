@@ -1,13 +1,25 @@
 <?php
+include "app/classes/databaseClass.php";
+include "app/classes/loginClass.php"; 
+include "app/classes/postClass.php"; 
+
+
 session_start();
+$post = new Post();
+
+$posts = $post->getPost();
+
 if(isset($_POST['logout'])){
-	session_destroy();
-	header("Location: login.php");
-	exit;
+	$logout = new Login();
+	$result = $logout->logoutUser();
+	if($result == true){
+            
+		echo "<script>window.open('login.php','_self')</script>";
+	}
  }
+
  if(isset($_SESSION['admin'])){
 	 $admin = $_SESSION['admin'];
-	 echo "<script>alert($admin)</script>";
 	}
 ?>
 <!doctype html>
@@ -20,7 +32,19 @@ if(isset($_POST['logout'])){
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<link rel="stylesheet" href="css/style.css">
 	<link rel="stylesheet" href="css/slick.css">
-	<title>Blog</title>
+	<title>Personal Blog</title>
+	<style>
+        .burger-btn{
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: x-large;
+            font-weight: 600;	
+        }
+		.burger-btn:hover {
+        color: #777;
+   		}
+    </style>
 </head>
 
 <body>
@@ -32,21 +56,29 @@ if(isset($_POST['logout'])){
 			<div class="main-navigation">
 				<ul class="main-navigation__ul">
 
-					<li><a href="#">Homepage</a></li>
+				<li><a href="index.php">Homepage</a></li>
 					<?php 
-						if(isset($_SESSION['admin']) && $_SESSION['admin'] == 'admin') {
+						if(isset($_SESSION['user_rank']) && $_SESSION['user_rank'] == 'admin') {
 							echo "<li><a href='createpost.php'>Create Post</a></li>";
-							echo "<li><a href='edit_post.php'>Edit Post</a></li>";
-							echo "<li><a href='delete_post.php'>Delete Post</a></li>";
-							echo "<li><a href='logout.php'>Log out</a></li>";
+
+							echo "
+							<form method='post' action=''>
+							<li><button type='submit' class='burger-btn' name='logout'>Log out</button></li>
+							
+							</form>
+							";
 						} else {
-							echo "<li><a href='login.php'>Login</a></li>";
-							echo "<li><a href='register.php'>Register</a></li>";
+							
+							echo "
+							<form method='post' action=''>
+							<li><button type='submit' class='burger-btn' name='logout'>Log out</button></li>
+							
+							</form>
+							";
 						}
 
 					?>
 					
-					<li><a href="#">Page 4</a></li>
 				</ul>
 			</div>
 			<div id="myBtn" class="burger-container" onclick="myFunction(this)">
@@ -80,7 +112,7 @@ if(isset($_POST['logout'])){
 					<span class="brand-span">Programer, Writer, Traveler</span>
 				</div>
 				<p>One Man. One Mission. Can He Go Beyond?One Man. One Mission. Can He Go Beyond?</p>
-				<a href="readmor.php" class="brand-button">Read bio > </a>
+				<!-- <a href=".php" class="brand-button">Read bio > </a> -->
 			</div>
 		</div>
 	</section>
@@ -95,10 +127,9 @@ if(isset($_POST['logout'])){
 				</div>
 				<div class="portfolio__bottom">
 					<div class="portfolio__name">
-						<span>Y</span>
-						<h2 class="universal-h2">assin Rahhaoui</h2>
+						<span>Y</span><h2 class="universal-h2">assin Rahhaoui</h2>
 					</div>
-					<p>Yassine Rahhaoui is a short story author, novelist, and award-winning poet.</p>
+					<p>Yassine Rahhaoui is a full stack web developer, novelist, and award-winning poet.</p>
 				</div>
 			</article>
 
@@ -143,56 +174,40 @@ if(isset($_POST['logout'])){
 	<!-- Counter -->
 
 	<!-- Blog -->
-	<section class="fh5co-blog">
-		<div class="site-container">
-			<h2 class="universal-h2 universal-h2-bckg">My Blog</h2>
-			<div class="blog-slider blog-inner">
-				<div class="single-blog">
-					<div class="single-blog__img">
-						<img src="./images/blog1.jpg" alt="blog image">
-					</div>
-					<div class="single-blog__text">
-						<h4>The Journey Under the Waves</h4>
-						<span>On August 28, 2015</span>
-						<p>Quisque vel sapi nec lacus adipis cing bibendum nullam porta lites laoreet aliquam.velitest,
-							tempus a ullamcorper et, lacinia mattis mi. Cras arcu nulla, blandit id cursus et, ultricies
-							eu leo.</p>
-						<br>
-						<a href="readmor.php" class="brand-button">Read mor > </a>
-					</div>
-				</div>
-				<div class="single-blog">
-					<div class="single-blog__img">
-						<img src="./images/blog2.jpg" alt="blog image">
-					</div>
-					<div class="single-blog__text">
-						<h4>The Journey Under the Waves</h4>
-						<span>On August 28, 2015</span>
-						<p>Quisque vel sapi nec lacus adipis cing bibendum nullam porta lites laoreet aliquam.velitest,
-							tempus a ullamcorper et, lacinia mattis mi. Cras arcu nulla, blandit id cursus et, ultricies
-							eu leo.</p>
-						<br>
-						<a href="readmor.php" class="brand-button">Read mor > </a>
-					</div>
-				</div>
-				<div class="single-blog">
-					<div class="single-blog__img">
-						<img src="./images/blog2.jpg" alt="blog image">
-					</div>
-					<div class="single-blog__text">
-						<h4>The Journey Under the Waves</h4>
-						<span>On August 28, 2015</span>
-						<p>Quisque vel sapi nec lacus adipis cing bibendum nullam porta lites laoreet aliquam.velitest,
-							tempus a ullamcorper et, lacinia mattis mi. Cras arcu nulla, blandit id cursus et, ultricies
-							eu leo.</p>
-						<br>
-						<a href="readmor.php" class="brand-button">Read mor > </a>
+    <section class="fh5co-blog">
+        <div class="site-container">
+            <h2 class="universal-h2 universal-h2-bckg">My Blog</h2>
+            <div class="blog-slider blog-inner">
 
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
+            <?php
+
+                foreach ($posts as $value) {
+                    # code...
+                    $image = $value->image;
+                    $title = $value->title;
+                    $content = $value->content;
+                    $date = $value->date;
+                    $id = $value->id;
+
+                    echo "
+                    <div class='single-blog'>
+                        <div class='single-blog__img'>
+                            <img src='$image' alt='blog image' style='width: 300px; height: 380px; object-fit: cover;'>
+                        </div>
+                        <div class='single-blog__text'>
+                            <h4>$title</h4>
+                            <span>$date</span>
+                            <p>$content</p>
+                            <br>
+                            <a href='show_post.php?id=$value->id' class='brand-button'>Read mor > </a>
+                        </div>
+                    </div>";
+                }
+    
+            ?>
+            </div>
+        </div>
+    </section>
 	<!-- Blog end -->
 
 	<!-- Quotes -->

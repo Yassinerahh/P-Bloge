@@ -1,34 +1,51 @@
 <?php
+include "app/classes/databaseClass.php";
+include "app/classes/registerClass.php"; 
 
-include "connect.php";
-// Handle registration form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
-    $username = $_POST["username"];
-    $email = $_POST["email"];
-    $password = $_POST["password"];
+$register = new Register();
+$error = "";
+$validationError = "";
 
+if(isset($_POST['register'])){
 
-    // Check if username already exists
-    $sql = "SELECT * FROM users WHERE username = '$username'";
-    $result = $conn->query($sql);
-    if ($result->num_rows > 0) {
-        $message = '<div class="warning-msg"><i class="fa fa-warning"></i> Username already exists. Please choose a different one.</div>';
-        // echo "Username already exists. Please choose a different one.";
-    } else {
-        // Insert user into database
-        $sql = "INSERT INTO users (username , email , password) VALUES ('$username' , '$email' , '$password')";
-        if ($conn->query($sql) === TRUE) {
-            $message = '<div class="success-msg"><i class="fa fa-check"></i> Registration successful.</div>';;
-            header("Location: login.php");
-        } else {
-            echo "Error: " . $sql . "<br>" . $conn->error;
-        }
+    $name = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $confirm_password = trim($_POST['confirm_password']);
+
+    $role = 'user';
+
+    $error = "";
+    $validationError = "";
+
+    // Generate a verification key
+
+    if(empty($email) && empty($name) && empty($password) && empty($confirm_password)){
+        $error .= "Please make sure to fill in all the boxes <br>";
+    }else if(empty($email) || !preg_match("/^([a-zA-Z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/", $email)){
+        $error .= "Please enter a valid email address <br>";
+    }else if(strlen($password) < 8){
+        $error .= "Password must be at least 8 characters long <br>";
+    }else if($password !== $confirm_password){
+        $error .= "Passwords do not match <br>";
+    }else if(empty($password)){
+        $error .= "Please enter a password <br>";
+    }else if(empty($confirm_password)){
+        $error .= "Please enter a confirmation password <br>";
     }
+
+    if(empty($error)){
+        $result = $register->registerUser($name, $email, $password, $confirm_password, $role);
+
+        if($result == 1){
+          $validationError .= "Used Email has been already taken! <a href='login.php'> [ Log in with that email. ] </a> <br>";
+        }
+        
+    }
+    
 }
 
-// Close database connection
-$conn->close();
+
 ?>
 
 
@@ -75,6 +92,11 @@ $conn->close();
     </head>
 
 <body>
+    <?php
+    echo $validationError;
+    echo $error;
+
+    ?>
     <section class="ftco-section">
         <div class="container">
             <div class="row justify-content-center">
@@ -115,24 +137,19 @@ $conn->close();
                                 <div class="form-group mb-3">
                                     <label class="label" for="password">Password</label>
                                     <input type="password" class="form-control" name="password" placeholder="Password" required>
-                                    <?php if(isset($message)){ echo $message; } ?>
+                                    <?php if(isset($error)){ echo $error; } ?>
+
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="label" for="confirm_password">confirm password</label>
+                                    <input type="password" class="form-control" name="confirm_password" placeholder="confirm password" required>
+                                    <?php if(isset($error)){ echo $error; } ?>
 
                                 </div>
 
                                 <div class="form-group">
-                                    <button type="submit" class="form-control btn btn-primary rounded submit px-3">Sign
+                                    <button type="submit" name="register" class="form-control btn btn-primary rounded submit px-3">Sign
                                         Up</button>
-                                </div>
-                                <div class="form-group d-md-flex">
-                                    <div class="w-50 text-left">
-                                        <label class="checkbox-wrap checkbox-primary mb-0">Remember Me
-                                            <input type="checkbox" checked>
-                                            <span class="checkmark"></span>
-                                        </label>
-                                    </div>
-                                    <div class="w-50 text-md-right">
-                                        <a href="#">Forgot Password</a>
-                                    </div>
                                 </div>
                             </form>
                             <p class="text-center">I'am a member? <a href="login.php">Sign In</a></p>
